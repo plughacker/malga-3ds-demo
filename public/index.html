@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Malga - Demo 3DS</title>
+  <link href="https://getbootstrap.com/docs/5.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+  <link rel="icon" href="https://malga.io/wp-content/uploads/2022/12/favicon-novo-150x150.png" sizes="32x32" />
+</head>
+
+<body class="bg-light">
+
+  <div class="container">
+    <main>
+      <div class="py-5 text-center">
+        <h2>Malga - Demo 3DS</h2>
+        <br>
+      </div>
+
+      <div class="row g-5">
+
+        <div class="row g-1">
+          <label for="input_holdername" class="col-sm-2 col-form-label">Holdername</label>
+          <div class="col-sm-10">
+            <input type="text" class="form-control" id="input_holdername" value="Jose da silva" placeholder="Jose da silva">
+          </div>
+        </div>
+
+        <div class="row g-1">
+          <label for="input_cardnumber" class="col-sm-2 col-form-label">CardNumber</label>
+          <div class="col-sm-10">
+            <input type="number" class="form-control" id="input_cardnumber" value="4000000000002503" placeholder="4000000000002503">
+          </div>
+        </div>
+
+        <div class="row g-1">
+          <label for="input_expiration" class="col-sm-2 col-form-label">Expiration</label>
+          <div class="col-sm-10">
+            <input type="text" class="form-control" id="input_expiration" value="10/2032" placeholder="MM/yyyy">
+          </div>
+        </div>
+        <div class="row g-1">
+          <label for="input_cvv" class="col-sm-2 col-form-label">CVV</label>
+          <div class="col-sm-10">
+            <input type="number" class="form-control" id="input_cvv" value="900" placeholder="123">
+          </div>
+        </div>
+
+        <hr>
+
+        <div class="row g-1">
+          <label for="input_amount" class="col-sm-2 col-form-label">Amount (Cents)</label>
+          <div class="col-sm-10">
+            <input type="number" class="form-control" id="input_amount" value="5790" placeholder="100" value="100">
+          </div>
+        </div>
+
+        <div class="row g-2">
+          <label class="col-sm-2 col-form-label"></label>
+          <div class="col-sm-10">
+            <button type="submit" id="btn_pay" class="btn btn-primary">Pagar</button>
+          </div>
+        </div>
+      </div>
+
+      <hr />
+      <table class="table">
+        <thead>
+          <tr>            
+            <th scope="col">Card</th>
+            <th scope="col">Test Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>4000000000002503</td>
+            <td>Challenge successfully</td>
+          </tr>
+          <tr>
+            <td>4000000000002370</td>
+            <td>Challenge Failed</td>
+          </tr>
+          <tr>
+            <td>5200000000001013</td>
+            <td>Frictionless Failed</td>
+          </tr>
+
+          <tr>
+            <td>4000000000001000</td>
+            <td>Frictionless successfully</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </main>
+
+    <footer class="my-5 pt-5 text-muted text-center text-small">
+      <p class="mb-1">&copy; Malga - Demo 3DS</p>
+    </footer>
+  </div>
+
+  <!-- start: This code below should be in your checkout -->
+  <!-- form setup -->
+  <div style="display: none;">
+    <iframe id="cardinal_collection_iframe" name="collectionIframe" height="1" width="1"></iframe>
+    <form id="cardinal_collection_form" method="POST" target="collectionIframe">
+      <input id="cardinal_collection_form_input" type="text" name="JWT" value="">
+    </form>
+  </div>
+
+  <!-- form challenge -->
+  <div style="display: none;">
+    <form id="step_up_form" name="stepup" method="POST" action="">
+      <input id="step_up_form_jwt_input" type="text" name="JWT" value="">
+    </form>
+
+    <iframe id="step_up_iframe" style="border: none; margin-left: auto; margin-right: auto; display: block"
+      height="800px" width="400px" name="stepUpIframe"></iframe>
+  </div>
+  <!-- end -->
+
+  <script src="./script.js"></script>
+
+  <script>
+    const docFormCardinal = document.getElementById('cardinal_collection_form');
+    const docInputCardinal = document.getElementById('cardinal_collection_form_input');
+    const docFormStep = document.getElementById('step_up_form');
+    const docInputStepJwt = document.getElementById('step_up_form_jwt_input');
+
+    const inputHoldername = document.getElementById('input_holdername');
+    const inputCardNumber = document.getElementById('input_cardnumber');
+    const inputExpiration = document.getElementById('input_expiration');
+    const inputCVV = document.getElementById('input_cvv');
+    const inputAmount = document.getElementById('input_amount');
+    const btnPay = document.getElementById('btn_pay');
+
+    // This data is returned after the setup and collection process
+    let collectUrl = '';
+
+    // the card token is created after creating the pay button
+    let tokenId = '';
+    let amount = 0;
+
+    // save data to repeat test
+    let card = (JSON.parse(localStorage.getItem('card') || '{}'))
+
+    localStorage.setItem('transactionId', '')
+
+    inputHoldername.value = card.cardHolderName || inputHoldername.value;
+    inputCardNumber.value = card.cardNumber || inputCardNumber.value;
+    inputExpiration.value = card.cardExpirationDate || inputExpiration.value;
+    inputCVV.value = card.cardCvv || inputCVV.value;
+
+    // start payment
+    btnPay.addEventListener('click', async (event) => {
+      event.preventDefault();
+
+      btnPay.disabled = true;
+      btnPay.textContent = 'payment in progress ...';
+
+      amount = parseInt(inputAmount.value, 10);
+      card = {
+        "cardHolderName": inputHoldername.value,
+        "cardNumber": inputCardNumber.value,
+        "cardCvv": inputCVV.value,
+        "cardExpirationDate": inputExpiration.value
+      }
+
+      localStorage.setItem('card', JSON.stringify(card))
+
+      const response = await setup(card);
+      tokenId = response.tokenId;
+      setupId = response.setup.id;
+      collectUrl = response.setup.collectUrl;
+
+      const token = response.setup.token;
+
+      // start the collection process
+      docFormCardinal.action = collectUrl;
+      docInputCardinal.value = token;
+      docFormCardinal.submit();
+    })
+
+    // when the collection process is finished
+    // we can automatically initiate the payment
+    // collection is important in the 3DS authentication process
+    window.addEventListener("message", async function (event) {
+
+      if (collectUrl && event.origin === new URL(collectUrl).origin) {
+        const data = JSON.parse(event.data);
+
+        const response = await createCharge(setupId, amount, tokenId)
+        localStorage.setItem('transactionId', response.id)
+
+        if (response.status !== 'pending') {
+          window.location.href = '/checkout.html'
+          return
+        }
+
+        docFormStep.action = response.threeDSecure2.authData.response.stepUrl;
+        docInputStepJwt.value = response.threeDSecure2.authData.response.token;
+        docFormStep.submit();
+      }
+    });
+
+  </script>
+
+</body>
+
+</html>
