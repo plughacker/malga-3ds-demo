@@ -103,7 +103,7 @@ const host = process.env.HOST;
 const port = process.env.PORT;
 
 app.listen(port, host, () => {
-  console.log(`running at ${host}:${port}`);
+  console.log(`running at http://${host}:${port}`);
 });
 
 function createAxiosInstance() {
