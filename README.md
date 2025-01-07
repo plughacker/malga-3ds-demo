@@ -24,8 +24,9 @@ BASE_URL_TOKENS=https://sandbox-api.malga.io
 NODE_TLS_REJECT_UNAUTHORIZED=0
 
 # debug requests to malga.io
-# if you don't want to debug, leave it blank
-HTTP_PROXY=http://127.0.0.1:18080
+# if you want to debug, uncomment
+# HTTP_PROXY=http://127.0.0.1:18080
+
 ```
 
 3. Install the project dependencies
